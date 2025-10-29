@@ -89,7 +89,9 @@ def results():
     conn.close()
     return render_template('results.html', results=results)
 
-if __name__ == '__main__':
-    init_db()
-    app.run(debug=False, port=5000)
+# Add this instead:
+init_db()
+
+# For Vercel
+app = app
 
