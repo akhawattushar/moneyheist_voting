@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vote - Money Heist</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Vote for Members</h1>
+        <form method="POST">
+            {% for member in members %}
+                <label><input type="checkbox" name="vote" value="{{ member }}"> {{ member }}</label><br>
+            {% endfor %}
+            <button type="submit">Submit Votes</button>
+        </form>
+    </div>
+</body>
+</html>
