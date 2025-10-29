@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.secret_key = 'moneyheist_secret_key'
 
 # Database URL from Vercel
-DATABASE_URL = os.environ.get('POSTGRES_URL')
+DATABASE_URL = os.environ.get('STORAGE_URL')  # Changed from POSTGRES_URL
 
 def get_db():
     return psycopg2.connect(DATABASE_URL, sslmode='require')
@@ -92,3 +92,4 @@ def results():
 if __name__ == '__main__':
     init_db()
     app.run(debug=False, port=5000)
+
