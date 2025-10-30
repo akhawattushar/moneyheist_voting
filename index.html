@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Money Heist Voting System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* Animated Liquid Background */
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        .liquid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #1a0000 0%, #0d0d0d 50%, #1a0000 100%);
+        }
+        
+        .liquid-background::before,
+        .liquid-background::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 8s ease-in-out infinite;
+        }
+        
+        .liquid-background::before {
+            background: rgba(229, 9, 20, 0.3);
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .liquid-background::after {
+            background: rgba(229, 9, 20, 0.2);
+            bottom: 20%;
+            right: 10%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, 50px) scale(1.1); }
+            50% { transform: translate(-50px, 100px) scale(0.9); }
+            75% { transform: translate(100px, -50px) scale(1.05); }
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            color: #e50914;
+            text-align: center;
+            font-size: clamp(2em, 5vw, 3em);
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h2 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 30px;
+            font-weight: 300;
+            font-size: clamp(1em, 3vw, 1.2em);
+        }
+        
+        .login-box, .vote-box, .results-box, .thanks-box {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #e50914;
+            border-radius: 20px;
+            padding: clamp(20px, 5vw, 40px);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(229, 9, 20, 0.4);
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #e50914;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
+            transform: scale(1.02);
+        }
+        
+        input::placeholder { color: #aaa; }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            background: linear-gradient(135deg, #e50914 0%, #b0060f 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #b0060f 0%, #e50914 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(229, 9, 20, 0.7);
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error {
+            color: #ff3333;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .members-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .members-grid::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        
+        .members-grid::-webkit-scrollbar-thumb {
+            background: #e50914;
+            border-radius: 10px;
+        }
+        
+        .member-card {
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(229, 9, 20, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+            animation: listItemAppear 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        
+        @keyframes listItemAppear {
+            to { opacity: 1; transform: translateX(0); }
+            from { opacity: 0; transform: translateX(-20px); }
+        }
+        
+        .member-card:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: #e50914;
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 5px 20px rgba(229, 9, 20, 0.5);
+        }
+        
+        .member-card input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-right: 10px;
+            accent-color: #e50914;
+        }
+        
+        .member-card label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(229, 9, 20, 0.5);
+        }
+        
+        th {
+            background: #e50914;
+            color: #fff;
+            font-weight: bold;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        
+        tr {
+            animation: tableRowAppear 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        
+        @keyframes tableRowAppear {
+            to { opacity: 1; }
+        }
+        
+        tr:hover {
+            background: rgba(229, 9, 20, 0.15);
+            transform: scale(1.01);
+        }
+        
+        .hidden { display: none !important; }
+        
+        .success-message {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .success-message h1 {
+            font-size: clamp(2em, 4vw, 2.5em);
+            margin-bottom: 20px;
+        }
+        
+        .rank-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: linear-gradient(135deg, #e50914, #b0060f);
+            border-radius: 20px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #e50914;
+            font-size: 1.2em;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(229, 9, 20, 0.3);
+            border-top: 4px solid #e50914;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .members-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 10px;
+            }
+            table { font-size: 14px; }
+            th, td { padding: 10px; }
+        }
+        
+        @media (max-width: 480px) {
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="liquid-background"></div>
+    
+    <div class="container">
+        <div id="login" class="login-box">
+            <h1>💰 Money Heist Voting</h1>
+            <h2>Login to Vote</h2>
+            <input type="text" id="username" placeholder="Username" autocomplete="off">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <p id="error" class="error"></p>
+        </div>
+        
+        <div id="vote" class="vote-box hidden">
+            <h1>🎯 Cast Your Votes</h1>
+            <h2>Select members you want to keep in the group</h2>
+            <div id="members" class="members-grid"></div>
+            <button onclick="submitVote()" id="submitBtn">Submit Votes</button>
+        </div>
+        
+        <div id="thanks" class="thanks-box hidden">
+            <div class="success-message">
+                <h1>✅ Thank You for Voting!</h1>
+                <p>Your votes have been recorded successfully.</p>
+            </div>
+        </div>
+        
+        <div id="results" class="results-box hidden">
+            <h1>📊 Voting Results</h1>
+            <h2>Total Votes by Member</h2>
+            <div class="loading" id="loadingResults">
+                <div class="spinner"></div>
+                Loading results...
+            </div>
+            <table id="resultsTable" class="hidden">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Member</th>
+                        <th>Votes</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBusoLYkwB8bnUGliI6ynf1Kim47HM_R44",
+            authDomain: "moneyheist-voting.firebaseapp.com",
+            databaseURL: "https://moneyheist-voting-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "moneyheist-voting",
+            storageBucket: "moneyheist-voting.firebasestorage.app",
+            messagingSenderId: "827386231791",
+            appId: "1:827386231791:web:e1221ba50e8a1aa98fd41a"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Member names
+        const memberNames = [
+            "Gaurav", "Tushar", "Shubham", "Anagh", "Apurva",
+            "Apoorv", "Arnav", "Samyak", "Ujjwal", "Prajjwal",
+            "Abhijeet", "Anish", "Abdul", "Vishisht", "Aakash",
+            "Paranjay", "Krishna.G", "Krishna.C", "Utkarsh", "User20"
+        ];
+        
+        // Initialize database
+        function initDatabase() {
+            // Initialize votes
+            memberNames.forEach(name => {
+                database.ref('votes/' + name).once('value', (snapshot) => {
+                    if (!snapshot.exists()) {
+                        database.ref('votes/' + name).set(0);
+                    }
+                });
+            });
+            
+            // Initialize users
+            memberNames.slice(0, 19).forEach((name, index) => {
+                const username = name.toLowerCase();
+                database.ref('users/' + username).once('value', (snapshot) => {
+                    if (!snapshot.exists()) {
+                        database.ref('users/' + username).set({
+                            password: username,
+                            voted: false,
+                            displayName: name
+                        });
+                    }
+                });
+            });
+            
+            // Add user20
+            database.ref('users/user20').once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    database.ref('users/user20').set({
+                        password: 'user20',
+                        voted: false,
+                        displayName: 'User20'
+                    });
+                }
+            });
+            
+            // Add admin
+            database.ref('users/admin').once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    database.ref('users/admin').set({
+                        password: 'admin123',
+                        voted: false,
+                        displayName: 'Admin',
+                        isAdmin: true
+                    });
+                }
+            });
+        }
+        
+        initDatabase();
+        
+        let currentUser = '';
+        
+        function login() {
+            const u = document.getElementById('username').value.toLowerCase().trim();
+            const p = document.getElementById('password').value;
+            
+            if (!u || !p) {
+                document.getElementById('error').innerText = 'Please enter username and password!';
+                return;
+            }
+            
+            database.ref('users/' + u).once('value', (snapshot) => {
+                const userData = snapshot.val();
+                
+                if (userData && userData.password === p) {
+                    if (userData.isAdmin) {
+                        currentUser = u;
+                        showResults();
+                    } else {
+                        if (userData.voted) {
+                            document.getElementById('error').innerText = 'You have already voted!';
+                        } else {
+                            currentUser = u;
+                            document.getElementById('login').classList.add('hidden');
+                            document.getElementById('vote').classList.remove('hidden');
+                            showVotingPage();
+                        }
+                    }
+                } else {
+                    document.getElementById('error').innerText = 'Invalid credentials!';
+                }
+            });
+        }
+        
+        function showVotingPage() {
+            let html = '';
+            memberNames.forEach((name, index) => {
+                setTimeout(() => {
+                    html += `
+                        <div class="member-card" style="animation-delay: ${index * 0.05}s">
+                            <label>
+                                <input type="checkbox" value="${name}">
+                                <span>${name}</span>
+                            </label>
+                        </div>
+                    `;
+                    document.getElementById('members').innerHTML = html;
+                }, index * 30);
+            });
+        }
+        
+        function submitVote() {
+            const checks = document.querySelectorAll('#members input:checked');
+            
+            if (checks.length === 0) {
+                alert('Please select at least one member!');
+                return;
+            }
+            
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').innerText = 'Submitting...';
+            
+            const updates = {};
+            
+            checks.forEach(c => {
+                const memberName = c.value;
+                database.ref('votes/' + memberName).once('value', (snapshot) => {
+                    const currentVotes = snapshot.val() || 0;
+                    updates['votes/' + memberName] = currentVotes + 1;
+                });
+            });
+            
+            setTimeout(() => {
+                updates['users/' + currentUser + '/voted'] = true;
+                
+                database.ref().update(updates).then(() => {
+                    document.getElementById('vote').classList.add('hidden');
+                    document.getElementById('thanks').classList.remove('hidden');
+                });
+            }, 500);
+        }
+        
+        function showResults() {
+            document.getElementById('login').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('loadingResults').classList.remove('hidden');
+            document.getElementById('resultsTable').classList.add('hidden');
+            
+            database.ref('votes').once('value', (snapshot) => {
+                const votes = snapshot.val();
+                const sorted = Object.entries(votes).sort((a, b) => b[1] - a[1]);
+                
+                let html = '';
+                sorted.forEach(([name, count], index) => {
+                    html += `
+                        <tr style="animation-delay: ${index * 0.05}s">
+                            <td><span class="rank-badge">#${index + 1}</span></td>
+                            <td><strong>${name}</strong></td>
+                            <td><strong>${count}</strong></td>
+                        </tr>
+                    `;
+                });
+                
+                setTimeout(() => {
+                    document.getElementById('loadingResults').classList.add('hidden');
+                    document.getElementById('resultsTable').classList.remove('hidden');
+                    document.getElementById('resultsBody').innerHTML = html;
+                }, 500);
+            });
+        }
+        
+        // Enter key to login
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById('login').classList.contains('hidden')) {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>
