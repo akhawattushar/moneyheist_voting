@@ -7,7 +7,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* Animated Liquid Background */
         body {
             background: #000;
             color: #fff;
@@ -178,15 +177,11 @@
             padding: 10px;
         }
         
-        .members-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-        
+        .members-grid::-webkit-scrollbar { width: 8px; }
         .members-grid::-webkit-scrollbar-track {
             background: rgba(255,255,255,0.1);
             border-radius: 10px;
         }
-        
         .members-grid::-webkit-scrollbar-thumb {
             background: #e50914;
             border-radius: 10px;
@@ -199,13 +194,6 @@
             padding: 15px;
             transition: all 0.3s;
             cursor: pointer;
-            animation: listItemAppear 0.4s ease-out forwards;
-            opacity: 0;
-        }
-        
-        @keyframes listItemAppear {
-            to { opacity: 1; transform: translateX(0); }
-            from { opacity: 0; transform: translateX(-20px); }
         }
         
         .member-card:hover {
@@ -247,23 +235,10 @@
             color: #fff;
             font-weight: bold;
             text-transform: uppercase;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-        
-        tr {
-            animation: tableRowAppear 0.4s ease-out forwards;
-            opacity: 0;
-        }
-        
-        @keyframes tableRowAppear {
-            to { opacity: 1; }
         }
         
         tr:hover {
             background: rgba(229, 9, 20, 0.15);
-            transform: scale(1.01);
         }
         
         .hidden { display: none !important; }
@@ -271,11 +246,6 @@
         .success-message {
             text-align: center;
             padding: 40px;
-        }
-        
-        .success-message h1 {
-            font-size: clamp(2em, 4vw, 2.5em);
-            margin-bottom: 20px;
         }
         
         .rank-badge {
@@ -309,7 +279,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Mobile responsiveness */
         @media (max-width: 768px) {
             .container { padding: 10px; }
             .members-grid {
@@ -321,9 +290,7 @@
         }
         
         @media (max-width: 480px) {
-            .members-grid {
-                grid-template-columns: 1fr;
-            }
+            .members-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -402,44 +369,49 @@
             "Paranjay", "Krishna.G", "Krishna.C", "Utkarsh", "User20"
         ];
         
-        // Initialize database
+        // Initialize database with all users and votes
         function initDatabase() {
-            // Initialize votes
+            console.log("Initializing database...");
+            
+            // Initialize votes for each member
             memberNames.forEach(name => {
-                database.ref('votes/' + name).once('value', (snapshot) => {
+                database.ref('votes/' + name).once('value').then((snapshot) => {
                     if (!snapshot.exists()) {
                         database.ref('votes/' + name).set(0);
+                        console.log("Created vote entry for:", name);
                     }
                 });
             });
             
-            // Initialize users
-            memberNames.slice(0, 19).forEach((name, index) => {
+            // Initialize users for members 1-19
+            memberNames.slice(0, 19).forEach((name) => {
                 const username = name.toLowerCase();
-                database.ref('users/' + username).once('value', (snapshot) => {
+                database.ref('users/' + username).once('value').then((snapshot) => {
                     if (!snapshot.exists()) {
                         database.ref('users/' + username).set({
                             password: username,
                             voted: false,
                             displayName: name
                         });
+                        console.log("Created user:", username);
                     }
                 });
             });
             
             // Add user20
-            database.ref('users/user20').once('value', (snapshot) => {
+            database.ref('users/user20').once('value').then((snapshot) => {
                 if (!snapshot.exists()) {
                     database.ref('users/user20').set({
                         password: 'user20',
                         voted: false,
                         displayName: 'User20'
                     });
+                    console.log("Created user: user20");
                 }
             });
             
             // Add admin
-            database.ref('users/admin').once('value', (snapshot) => {
+            database.ref('users/admin').once('value').then((snapshot) => {
                 if (!snapshot.exists()) {
                     database.ref('users/admin').set({
                         password: 'admin123',
@@ -447,25 +419,32 @@
                         displayName: 'Admin',
                         isAdmin: true
                     });
+                    console.log("Created admin user");
                 }
             });
         }
         
-        initDatabase();
+        // Wait for Firebase to load, then initialize
+        setTimeout(() => {
+            initDatabase();
+        }, 1000);
         
         let currentUser = '';
         
         function login() {
             const u = document.getElementById('username').value.toLowerCase().trim();
-            const p = document.getElementById('password').value;
+            const p = document.getElementById('password').value.trim();
             
             if (!u || !p) {
                 document.getElementById('error').innerText = 'Please enter username and password!';
                 return;
             }
             
-            database.ref('users/' + u).once('value', (snapshot) => {
+            console.log("Attempting login for:", u);
+            
+            database.ref('users/' + u).once('value').then((snapshot) => {
                 const userData = snapshot.val();
+                console.log("User data:", userData);
                 
                 if (userData && userData.password === p) {
                     if (userData.isAdmin) {
@@ -483,25 +462,27 @@
                     }
                 } else {
                     document.getElementById('error').innerText = 'Invalid credentials!';
+                    console.log("Login failed for:", u);
                 }
+            }).catch((error) => {
+                console.error("Login error:", error);
+                document.getElementById('error').innerText = 'Connection error! Please try again.';
             });
         }
         
         function showVotingPage() {
             let html = '';
-            memberNames.forEach((name, index) => {
-                setTimeout(() => {
-                    html += `
-                        <div class="member-card" style="animation-delay: ${index * 0.05}s">
-                            <label>
-                                <input type="checkbox" value="${name}">
-                                <span>${name}</span>
-                            </label>
-                        </div>
-                    `;
-                    document.getElementById('members').innerHTML = html;
-                }, index * 30);
+            memberNames.forEach((name) => {
+                html += `
+                    <div class="member-card">
+                        <label>
+                            <input type="checkbox" value="${name}">
+                            <span>${name}</span>
+                        </label>
+                    </div>
+                `;
             });
+            document.getElementById('members').innerHTML = html;
         }
         
         function submitVote() {
@@ -516,23 +497,25 @@
             document.getElementById('submitBtn').innerText = 'Submitting...';
             
             const updates = {};
+            let processed = 0;
             
-            checks.forEach(c => {
+            checks.forEach((c) => {
                 const memberName = c.value;
-                database.ref('votes/' + memberName).once('value', (snapshot) => {
+                database.ref('votes/' + memberName).once('value').then((snapshot) => {
                     const currentVotes = snapshot.val() || 0;
                     updates['votes/' + memberName] = currentVotes + 1;
+                    processed++;
+                    
+                    if (processed === checks.length) {
+                        updates['users/' + currentUser + '/voted'] = true;
+                        
+                        database.ref().update(updates).then(() => {
+                            document.getElementById('vote').classList.add('hidden');
+                            document.getElementById('thanks').classList.remove('hidden');
+                        });
+                    }
                 });
             });
-            
-            setTimeout(() => {
-                updates['users/' + currentUser + '/voted'] = true;
-                
-                database.ref().update(updates).then(() => {
-                    document.getElementById('vote').classList.add('hidden');
-                    document.getElementById('thanks').classList.remove('hidden');
-                });
-            }, 500);
         }
         
         function showResults() {
@@ -541,14 +524,14 @@
             document.getElementById('loadingResults').classList.remove('hidden');
             document.getElementById('resultsTable').classList.add('hidden');
             
-            database.ref('votes').once('value', (snapshot) => {
-                const votes = snapshot.val();
+            database.ref('votes').once('value').then((snapshot) => {
+                const votes = snapshot.val() || {};
                 const sorted = Object.entries(votes).sort((a, b) => b[1] - a[1]);
                 
                 let html = '';
                 sorted.forEach(([name, count], index) => {
                     html += `
-                        <tr style="animation-delay: ${index * 0.05}s">
+                        <tr>
                             <td><span class="rank-badge">#${index + 1}</span></td>
                             <td><strong>${name}</strong></td>
                             <td><strong>${count}</strong></td>
@@ -573,3 +556,4 @@
     </script>
 </body>
 </html>
+
